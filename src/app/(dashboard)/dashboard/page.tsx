@@ -1,77 +1,88 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getLoggedInUser } from '@/utils/auth';
-import Navbar from '@/components/common/Navbar';
-import Sidebar from '@/components/common/Sidebar';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getLoggedInUser, getUserRole, clearLoggedInUser } from "@/utils/auth";
 
-export default function DashboardPage() {
+const Dashboard = () => {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [role, setRole] = useState<"admin" | "employee" | null>(null);
 
   useEffect(() => {
-    const storedUser = getLoggedInUser();
-    if (!storedUser) {
-      router.push('/login');
-    } else {
-      setUser(storedUser);
+    const loggedInUser = getLoggedInUser();
+    if (!loggedInUser) {
+      router.push("/login");
+      return;
     }
+    setUser(loggedInUser);
+    setRole(getUserRole(loggedInUser.email));
   }, [router]);
 
-  if (!user) return null;
+  const handleLogout = () => {
+    clearLoggedInUser();
+    router.push("/login");
+  };
+
+  if (!user || !role)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white text-lg">
+        Loading...
+      </div>
+    );
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex-1">
-        <Navbar />
-        <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4 text-brand-purple">
-            Welcome, {user.name || user.email}
-          </h1>
-          <p>Your band level: {user.bandLevel}</p>
-          <p>{user.isAdmin ? 'Role: Admin' : 'Role: Employee'}</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6 animate-fade-in">
+      {/* Welcome Message */}
+      <h1 className="text-3xl font-extrabold mb-2 text-blue-400">
+        Welcome, <span className="text-purple-400">{user.email}</span>
+      </h1>
+      <p className="text-lg text-gray-300">Role: <span className="text-green-400">{role.toUpperCase()}</span></p>
 
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-2">Quick Actions</h2>
-            <div className="flex gap-4">
-              {!user.isAdmin && (
-                <>
-                  <button
-                    onClick={() => router.push('/feedback/monthly')}
-                    className="bg-brand-purple px-4 py-2 rounded hover:bg-purple-800 transition"
-                  >
-                    Submit Monthly Feedback
-                  </button>
-                  <button
-                    onClick={() => router.push('/feedback/rt')}
-                    className="bg-brand-purple px-4 py-2 rounded hover:bg-purple-800 transition"
-                  >
-                    Submit RT Feedback
-                  </button>
-                </>
-              )}
-              {user.isAdmin && (
-                <>
-                  <button
-                    onClick={() => router.push('/admin/rt-cycle')}
-                    className="bg-brand-purple px-4 py-2 rounded hover:bg-purple-800 transition"
-                  >
-                    Start RT Cycle
-                  </button>
-                  <button
-                    onClick={() => router.push('/admin/feedback')}
-                    className="bg-brand-purple px-4 py-2 rounded hover:bg-purple-800 transition"
-                  >
-                    View All RT Feedback
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Buttons Section */}
+      <div className="mt-6 space-y-4 space-x-4">
+        {role === "admin" ? (
+          <>
+            <button
+              onClick={() => router.push("/admin/rt-cycle")}
+              className="px-6 py-3 w-64 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              Manage RT Cycles
+            </button>
+            <button
+              onClick={() => router.push("/admin/feedback")}
+              className="px-6 py-3 w-80 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              Admin Feedback Management
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => router.push("/dashboard/feedback/monthly")}
+              className="px-6 py-3 w-64 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              Submit Monthly Feedback
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/feedback/rt")}
+              className="px-6 py-3 w-64 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              Submit RT Feedback
+            </button>
+          </>
+        )}
       </div>
+
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="mt-6 px-6 py-3 w-64 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+      >
+        Logout
+      </button>
     </div>
   );
-}
+};
+
+export default Dashboard;

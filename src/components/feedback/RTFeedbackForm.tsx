@@ -1,100 +1,73 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { submitRTFeedback, checkRTEligibility } from '@/lib/api';
-import { getLoggedInUser } from '@/utils/auth';
-import { RTFeedbackSubmissionDTO } from '@/lib/types';
+import { useState, useEffect } from "react";
+import { checkRTEligibility, submitRTFeedback } from "@/lib/api";
+import { getLoggedInUser } from "@/utils/auth";
 
-export default function RTFeedbackForm() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [cycleId, setCycleId] = useState<number>(0);
-  const [additionalComments, setAdditionalComments] = useState('');
+const RTFeedbackForm = ({ cycleId }: { cycleId: number }) => {
+  const user = getLoggedInUser();
   const [isEligible, setIsEligible] = useState(false);
+  const [collatedFeedback, setCollatedFeedback] = useState<any>(null);
+  const [additionalComments, setAdditionalComments] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const storedUser = getLoggedInUser();
-    if (!storedUser) {
-      router.push('/login');
-    } else {
-      setUser(storedUser);
-    }
-  }, [router]);
-
-  // For demo, assume active cycle ID is known or fetched from backend
-  // In a real scenario, you'd fetch the active cycle ID from an API.
-  useEffect(() => {
-    // Example: Hardcode an active cycle ID or fetch from /api/rt/cycle
-    const fetchActiveCycle = async () => {
-      try {
-        const activeCycle = await fetch('/api/rt/cycle').then((res) => res.json());
-        setCycleId(activeCycle.id);
-      } catch (error) {
-        console.error('Error fetching active cycle:', error);
-      }
+    const fetchEligibility = async () => {
+      const eligible = await checkRTEligibility(user?.email || "", cycleId);
+      setIsEligible(eligible);
     };
-    fetchActiveCycle();
-  }, []);
-
-  // Check if user has enough monthly feedback forms
-  useEffect(() => {
-    if (user && cycleId) {
-      checkRTEligibility(user.email, cycleId).then((eligible) => {
-        setIsEligible(eligible);
-      });
-    }
-  }, [user, cycleId]);
+    fetchEligibility();
+  }, [user?.email, cycleId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEligible) {
-      alert('You do not have enough monthly feedback forms to submit RT feedback.');
-      return;
-    }
+    setLoading(true);
+    setMessage("");
+
     try {
-      const dto: RTFeedbackSubmissionDTO = {
-        employeeEmail: user.email,
+      await submitRTFeedback({
+        employeeEmail: user?.email || "",
         rtCycleId: cycleId,
         additionalComments,
-      };
-      await submitRTFeedback(dto);
-      alert('RT Feedback submitted successfully!');
-      router.push('/dashboard');
+      });
+      setMessage("RT Feedback submitted successfully!");
     } catch (error) {
-      console.error(error);
-      alert('Error submitting RT feedback.');
+      setMessage("Error submitting RT feedback.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded shadow-md">
-      <div className="mb-4">
-        <label className="block mb-1">Active RT Cycle ID</label>
-        <input
-          type="number"
-          className="w-full p-2 rounded bg-gray-700 focus:outline-none"
-          value={cycleId}
-          disabled
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1">Additional Comments</label>
-        <textarea
-          className="w-full p-2 rounded bg-gray-700 focus:outline-none"
-          value={additionalComments}
-          onChange={(e) => setAdditionalComments(e.target.value)}
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={!isEligible}
-        className={`${
-          isEligible ? 'bg-brand-purple hover:bg-purple-800' : 'bg-gray-600'
-        } w-full py-2 rounded font-semibold transition`}
-      >
-        Submit RT Feedback
-      </button>
-    </form>
+    <div className="p-6 bg-gray-800 text-white rounded-lg shadow-lg">
+      <h2 className="text-xl font-bold mb-4">RT Feedback Form</h2>
+
+      {message && <p className="text-green-400">{message}</p>}
+
+      {!isEligible ? (
+        <p className="text-red-400">You are not eligible to submit RT feedback yet.</p>
+      ) : (
+        <>
+          <div className="bg-gray-700 p-4 rounded-md mb-4">
+            <h3 className="font-semibold">Collated Feedback (Read-only)</h3>
+            <pre className="text-sm">{JSON.stringify(collatedFeedback, null, 2)}</pre>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block">
+              Additional Comments (Optional)
+              <textarea className="w-full p-2 bg-gray-700 text-white rounded-md" onChange={(e) => setAdditionalComments(e.target.value)}></textarea>
+            </label>
+
+            <button type="submit" className="bg-purple-600 px-4 py-2 rounded-md hover:bg-purple-700" disabled={loading}>
+              {loading ? "Submitting..." : "Submit RT Feedback"}
+            </button>
+          </form>
+        </>
+      )}
+    </div>
   );
-}
+};
+
+export default RTFeedbackForm;
