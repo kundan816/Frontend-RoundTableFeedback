@@ -1,15 +1,13 @@
-import './globals.css';
-import { ReactNode } from 'react';
-
+import "./globals.css";
 export const metadata = {
-  title: 'RoundTable Feedback',
-  description: 'Performance Feedback Automation',
+  title: "RoundTable Feedback",
+  description: "Streamline your Monthly and RT Feedback process efficiently.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-brand-black text-white min-h-screen">
+      <body className="h-screen bg-gradient-to-r from-purple-900 via-purple-800 to-blue-800 text-white">
         {children}
       </body>
     </html>

@@ -1,31 +1,36 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { getLoggedInUser, clearLoggedInUser } from '@/utils/auth';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { getLoggedInUser, clearLoggedInUser } from "@/utils/auth";
 
-export default function Navbar() {
+const Navbar = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
   const router = useRouter();
   const user = getLoggedInUser();
-
+  
   const handleLogout = () => {
     clearLoggedInUser();
-    router.push('/login');
+    router.push("/login"); 
   };
 
   return (
-    <nav className="bg-gray-900 p-4 flex justify-between items-center">
-      <div className="text-xl font-bold text-brand-purple">RoundTable</div>
-      <div>
-        {user && (
-          <button
-            onClick={handleLogout}
-            className="bg-brand-purple px-3 py-1 rounded hover:bg-purple-800 transition"
-          >
-            Logout
-          </button>
-        )}
+    <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
+ 
+      <button className="md:hidden text-white" onClick={toggleSidebar}>
+        ☰
+      </button>
+
+      
+      <h1 className="text-lg font-semibold">RT Feedback System</h1>
+
+      <div className="flex items-center gap-4">
+        <span className="hidden md:inline">{user?.email}</span>
+        <button onClick={handleLogout} className="bg-red-500 px-3 py-1 rounded-md hover:bg-red-600">
+          Logout
+        </button>
       </div>
     </nav>
   );
-}
+};
+
+export default Navbar;

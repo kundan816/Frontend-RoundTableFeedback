@@ -5,7 +5,7 @@ export interface LoginDTO {
   
   export interface FeedbackFormDTO {
     employeeEmail: string;
-    feedbackMonth: string; // e.g. "2025-02"
+    feedbackMonth: string; //  "2025-02"
     managerEmail: string;
     comments: string;
     leadership?: number;
@@ -18,8 +18,8 @@ export interface LoginDTO {
   }
   
   export interface RTCycleDTO {
-    startMonth: string; 
-    endMonth: string;   
+    startMonth: string;
+    endMonth: string;
   }
   
   export interface RTFeedbackSubmissionDTO {
@@ -43,6 +43,6 @@ export interface LoginDTO {
     adminOverrideRating?: number;
     adminOverrideGrade?: string;
     adminReason?: string;
-    includedFeedbacks?: any[]; 
+    includedFeedbacks?: any[];
   }
   

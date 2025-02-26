@@ -1,57 +1,93 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { startRTCycle } from '@/lib/api';
-import { getLoggedInUser } from '@/utils/auth';
+import { useState } from "react";
+import { startRTCycle, getAllRTCycles } from "@/lib/api";
+import { toast } from "react-toastify";
 
-export default function RTCycleForm() {
-  const [startMonth, setStartMonth] = useState('');
-  const [endMonth, setEndMonth] = useState('');
+const RTCycleForm = () => {
+  const [startMonth, setStartMonth] = useState("");
+  const [endMonth, setEndMonth] = useState("");
+  const [rtCycles, setRTCycles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const adminEmail = "rajshorya893@gmail.com"; 
+
+  const fetchRTCycles = async () => {
+    try {
+      const cycles = await getAllRTCycles();
+      setRTCycles(cycles);
+    } catch (error) {
+      toast.error("Failed to fetch RT cycles");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = getLoggedInUser();
-    if (!user || !user.isAdmin) {
-      alert('Only admins can start RT cycle.');
+    if (!startMonth || !endMonth) {
+      toast.error("Please select both start and end months.");
       return;
     }
+
+    setLoading(true);
     try {
-      await startRTCycle({ startMonth, endMonth }, user.email);
-      alert('RT cycle started successfully!');
+      await startRTCycle({ startMonth, endMonth }, adminEmail);
+      toast.success("RT Cycle started successfully!");
+      fetchRTCycles();
+      setStartMonth("");
+      setEndMonth("");
     } catch (error) {
-      console.error(error);
-      alert('Error starting RT cycle.');
+      toast.error("Error starting RT Cycle.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-800 p-6 rounded shadow-md max-w-md">
-      <div className="mb-4">
-        <label className="block mb-1">Start Month (YYYY-MM)</label>
-        <input
-          type="text"
-          className="w-full p-2 rounded bg-gray-700 focus:outline-none"
-          value={startMonth}
-          onChange={(e) => setStartMonth(e.target.value)}
-          required
-        />
+    <div className="p-6 bg-gray-800 text-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-semibold mb-4">Start a New RT Cycle</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm">Start Month-Year</label>
+          <input
+            type="month"
+            value={startMonth}
+            onChange={(e) => setStartMonth(e.target.value)}
+            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm">End Month-Year</label>
+          <input
+            type="month"
+            value={endMonth}
+            onChange={(e) => setEndMonth(e.target.value)}
+            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-md font-medium"
+          disabled={loading}
+        >
+          {loading ? "Starting..." : "Start RT Cycle"}
+        </button>
+      </form>
+
+       {/* Display existing RT Cycles  */}
+      <div className="mt-6">
+        <h3 className="text-xl font-semibold mb-3">Active RT Cycles</h3>
+        <button onClick={fetchRTCycles} className="text-sm text-blue-400 mb-2">Refresh List</button>
+        <ul className="space-y-2">
+          {rtCycles.map((cycle: any) => (
+            <li key={cycle.id} className="bg-gray-700 p-3 rounded-md">
+              {cycle.startMonth} - {cycle.endMonth}
+            </li>
+          ))}
+        </ul>
       </div>
-      <div className="mb-4">
-        <label className="block mb-1">End Month (YYYY-MM)</label>
-        <input
-          type="text"
-          className="w-full p-2 rounded bg-gray-700 focus:outline-none"
-          value={endMonth}
-          onChange={(e) => setEndMonth(e.target.value)}
-          required
-        />
-      </div>
-      <button
-        type="submit"
-        className="bg-brand-purple w-full py-2 rounded font-semibold hover:bg-purple-800 transition"
-      >
-        Start RT Cycle
-      </button>
-    </form>
+    </div>
   );
-}
+};
+
+export default RTCycleForm;
